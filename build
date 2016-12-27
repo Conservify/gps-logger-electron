@@ -1,0 +1,3 @@
+#!/bin/bash
+
+particle.exe compile electron . --saveTo firmware.bin && particle.exe flash electron --usb firmware.bin
