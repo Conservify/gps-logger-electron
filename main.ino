@@ -16,7 +16,7 @@ TinyGPSPlus gps;
 const char *eventName = "accel";
 
 // Various timing constants
-const uint32_t PUBLISH_INTERVAL_MS = 15 * 60 * 1000;     // Only publish every fifteen minutes
+const uint32_t PUBLISH_INTERVAL_MS = 60 * 60 * 1000;     // Only publish every fifteen minutes
 const uint32_t PUBLISH_INTERVAL_SEC = PUBLISH_INTERVAL_MS / 1000;
 const uint32_t MAX_TIME_TO_PUBLISH_MS = 60 * 1000;       // Only stay awake for 60 seconds trying to connect to the cloud and publish
 const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 3 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
