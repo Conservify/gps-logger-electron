@@ -95,6 +95,7 @@ void loop() {
         break;
 
     case RESET_STATE: {
+        #ifdef MONITOR_MOTION
         LIS3DHConfig config;
         config.setLowPowerWakeMode(16);
 
@@ -102,6 +103,7 @@ void loop() {
             state = SLEEP_STATE;
             break;
         }
+        #endif
 
         state = BOOT_WAIT_STATE;
         break;
@@ -169,14 +171,16 @@ void loop() {
 
     case BOOT_WAIT_STATE:
         if (millis() - stateTime >= TIME_AFTER_BOOT_MS) {
-            state = GPS_WAIT_STATE;
+            state = PUBLISH_STATE;
             stateTime = millis();
         }
         break;
 
     case SLEEP_STATE:
+        #ifdef MONITOR_MOTION
         // Wait for Electron to stop moving for 2 seconds so we can recalibrate the accelerometer
         accel.calibrateFilter(2000);
+        #endif
 
         delay(500);
 
@@ -186,7 +190,9 @@ void loop() {
         // immediately coming out of sleep.
         delay(500);
 
+        #ifdef MONITOR_MOTION
         moved = ((accel.clearInterrupt() & LIS3DH::INT1_SRC_IA) != 0);
+        #endif
 
         digitalWrite(D6, LOW);
         startFix = millis();
