@@ -13,13 +13,13 @@ LIS3DHSPI accel(SPI, A2, WKP);
 TinyGPSPlus gps;
 
 // This is the name of the Particle event to publish for battery or movement detection events
-const char *eventName = "accel";
+const char *eventName = "gps";
 
 // Various timing constants
-const uint32_t PUBLISH_INTERVAL_MS = 60 * 60 * 1000;     // Only publish every fifteen minutes
+const uint32_t PUBLISH_INTERVAL_MS = 22 * 60 * 1000;     // Only publish every fifteen minutes
 const uint32_t PUBLISH_INTERVAL_SEC = PUBLISH_INTERVAL_MS / 1000;
 const uint32_t MAX_TIME_TO_PUBLISH_MS = 60 * 1000;       // Only stay awake for 60 seconds trying to connect to the cloud and publish
-const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 3 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
+const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 5 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
 const uint32_t TIME_AFTER_PUBLISH_MS = 4 * 1000;         // After publish, wait 4 seconds for data to go out
 const uint32_t TIME_AFTER_BOOT_MS = 5 * 1000;            // At boot, wait 5 seconds before going to sleep again (after coming online)
 const uint32_t PUBLISH_TTL = 60;
@@ -38,9 +38,9 @@ enum State {
 State state = ONLINE_WAIT_STATE;
 uint32_t stateTime = 0;
 uint32_t startFix = 0;
-uint32_t lastSerial = 0;
-uint32_t lastPublish = 0;
+#ifdef MONITOR_MOTION
 bool moved = 0;
+#endif
 bool gettingFix = false;
 
 void flashLed(uint8_t times, uint32_t delayMs) {
@@ -114,9 +114,9 @@ void loop() {
             break;
         }
         if (millis() - stateTime >= MAX_TIME_FOR_GPS_FIX_MS) {
-            state = SLEEP_STATE;
+            flashRgb(255, 0, 0, 1, 500);
+            state = PUBLISH_STATE; // SLEEP_STATE
             break;
-
         }
         break;
 
@@ -124,41 +124,31 @@ void loop() {
         char data[128];
         float cellVoltage = batteryMonitor.getVCell();
         float stateOfCharge = batteryMonitor.getSoC();
-        int32_t timeSinceLastPublished = Time.now() - lastPublish;
 
         snprintf(data, sizeof(data), "%d,%.02f,%.02f,%f,%f,%ld",
-                 moved,
+                 0,
                  cellVoltage,
                  stateOfCharge,
                  gps.location.lat(),
                  gps.location.lng(),
-                 lastPublish > 0 ? timeSinceLastPublished : 0);
+                 gps.location.isValid());
 
         Serial5.print(Time.now());
         Serial5.print(",");
         Serial5.println(data);
 
         if (Particle.connected()) {
-            if (lastPublish == 0 || timeSinceLastPublished > PUBLISH_INTERVAL_SEC) {
-                flashRgb(0, 255, 0, 1, 500);
+            flashRgb(0, 255, 0, 1, 500);
 
-                Particle.publish(eventName, data, PUBLISH_TTL, PRIVATE);
+            Particle.publish(eventName, data, PUBLISH_TTL, PRIVATE);
 
-                lastPublish = Time.now();
-
-                stateTime = millis();
-                state = SLEEP_WAIT_STATE;
-            }
-            else {
-                flashRgb(255, 255, 0, 1, 500);
-
-                state = SLEEP_STATE;
-            }
+            stateTime = millis();
+            state = SLEEP_WAIT_STATE;
         }
         else {
             if (millis() - stateTime >= MAX_TIME_TO_PUBLISH_MS) {
+                flashRgb(255, 0, 0, 1, 500);
                 state = SLEEP_STATE;
-                lastPublish = 0;
             }
         }
         break;
@@ -171,7 +161,7 @@ void loop() {
 
     case BOOT_WAIT_STATE:
         if (millis() - stateTime >= TIME_AFTER_BOOT_MS) {
-            state = PUBLISH_STATE;
+            state = GPS_WAIT_STATE;
             stateTime = millis();
         }
         break;
@@ -184,7 +174,8 @@ void loop() {
 
         delay(500);
 
-        System.sleep(WKP, RISING, PUBLISH_INTERVAL_SEC, SLEEP_NETWORK_STANDBY);
+        // System.sleep(WKP, RISING, PUBLISH_INTERVAL_SEC, SLEEP_NETWORK_STANDBY);
+        System.sleep(SLEEP_MODE_DEEP, PUBLISH_INTERVAL_SEC);
 
         // This delay should not be necessary, but sometimes things don't seem to work right
         // immediately coming out of sleep.
