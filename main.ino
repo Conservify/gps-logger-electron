@@ -41,7 +41,6 @@ uint32_t startFix = 0;
 #ifdef MONITOR_MOTION
 bool moved = 0;
 #endif
-bool gettingFix = false;
 
 void flashLed(uint8_t times, uint32_t delayMs) {
     for (uint8_t i = 0; i < times; ++i) {
@@ -64,23 +63,39 @@ void flashRgb(uint8_t r, uint8_t g, uint8_t b, uint8_t times, uint32_t delayMs) 
     RGB.control(false);
 }
 
+#define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+#define PMTK_SET_NMEA_UPDATE_1HZ  "$PMTK220,1000*1F"
+#define PGCMD_ANTENNA "$PGCMD,33,1*6C"
+#define PGCMD_NOANTENNA "$PGCMD,33,0*6D"
+
 void setup() {
     Serial.begin(9600);
     Serial1.begin(9600);
     Serial5.begin(9600);
 
+    pinMode(D6, OUTPUT);
+    digitalWrite(D6, LOW);
+
+    delay(500);
+    Serial1.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+    delay(500);
+    Serial1.println(PMTK_SET_NMEA_UPDATE_1HZ);
+    delay(500);
+    Serial1.println(PGCMD_NOANTENNA);
+    delay(500);
+
     pinMode(D7, OUTPUT);
     digitalWrite(D7, LOW);
 
-    pinMode(D6, OUTPUT);
-    digitalWrite(D6, LOW);
     startFix = millis();
-    gettingFix = true;
 }
 
 void loop() {
     while (Serial1.available() > 0) {
-        if (gps.encode(Serial1.read())) {
+        char c = Serial1.read();
+        Serial5.print(c);
+        if (gps.encode(c)) {
+            Serial5.println();
         }
     }
 
@@ -174,6 +189,8 @@ void loop() {
 
         delay(500);
 
+        digitalWrite(D6, HIGH);
+
         // System.sleep(WKP, RISING, PUBLISH_INTERVAL_SEC, SLEEP_NETWORK_STANDBY);
         System.sleep(SLEEP_MODE_DEEP, PUBLISH_INTERVAL_SEC);
 
@@ -187,7 +204,6 @@ void loop() {
 
         digitalWrite(D6, LOW);
         startFix = millis();
-        gettingFix = true;
 
         state = GPS_WAIT_STATE;
         stateTime = millis();
