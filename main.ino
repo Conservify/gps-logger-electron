@@ -9,7 +9,9 @@
 SYSTEM_THREAD(ENABLED);
 
 FuelGauge batteryMonitor;
+#ifdef MONITOR_MOTION
 LIS3DHSPI accel(SPI, A2, WKP);
+#endif
 TinyGPSPlus gps;
 
 // This is the name of the Particle event to publish for battery or movement detection events
@@ -18,8 +20,8 @@ const char *eventName = "gps";
 // Various timing constants
 const uint32_t PUBLISH_INTERVAL_MS = 22 * 60 * 1000;     // Only publish every fifteen minutes
 const uint32_t PUBLISH_INTERVAL_SEC = PUBLISH_INTERVAL_MS / 1000;
-const uint32_t MAX_TIME_TO_PUBLISH_MS = 60 * 1000;       // Only stay awake for 60 seconds trying to connect to the cloud and publish
-const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 5 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
+const uint32_t MAX_TIME_TO_PUBLISH_MS = 5 * 1000;       // Only stay awake for 60 seconds trying to connect to the cloud and publish
+const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 20 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
 const uint32_t TIME_AFTER_PUBLISH_MS = 4 * 1000;         // After publish, wait 4 seconds for data to go out
 const uint32_t TIME_AFTER_BOOT_MS = 5 * 1000;            // At boot, wait 5 seconds before going to sleep again (after coming online)
 const uint32_t PUBLISH_TTL = 60;
@@ -74,8 +76,14 @@ void setup() {
     Serial5.begin(9600);
 
     pinMode(D6, OUTPUT);
+    digitalWrite(D6, HIGH);
+
+    delay(500);
+
+    pinMode(D6, OUTPUT);
     digitalWrite(D6, LOW);
 
+    /*
     delay(500);
     Serial1.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);
     delay(500);
@@ -83,6 +91,7 @@ void setup() {
     delay(500);
     Serial1.println(PGCMD_NOANTENNA);
     delay(500);
+    */
 
     pinMode(D7, OUTPUT);
     digitalWrite(D7, LOW);
@@ -140,12 +149,13 @@ void loop() {
         float cellVoltage = batteryMonitor.getVCell();
         float stateOfCharge = batteryMonitor.getSoC();
 
-        snprintf(data, sizeof(data), "%d,%.02f,%.02f,%f,%f,%ld",
-                 0,
+        snprintf(data, sizeof(data), "%.02f,%.02f,%f,%f,%ld,%ld,%ld",
                  cellVoltage,
                  stateOfCharge,
                  gps.location.lat(),
                  gps.location.lng(),
+                 gps.satellites.value(),
+                 gps.hdop.value(),
                  gps.location.isValid());
 
         Serial5.print(Time.now());
