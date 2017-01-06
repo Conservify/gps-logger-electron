@@ -149,11 +149,12 @@ void loop() {
         float cellVoltage = batteryMonitor.getVCell();
         float stateOfCharge = batteryMonitor.getSoC();
 
-        snprintf(data, sizeof(data), "%.02f,%.02f,%f,%f,%ld,%ld,%ld",
+        snprintf(data, sizeof(data), "%.02f,%.02f,%f,%f,%f,%ld,%ld,%ld",
                  cellVoltage,
                  stateOfCharge,
                  gps.location.lat(),
                  gps.location.lng(),
+                 gps.altitude.meters(),
                  gps.satellites.value(),
                  gps.hdop.value(),
                  gps.location.isValid());
