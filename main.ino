@@ -1,7 +1,7 @@
 // Based originally off of code from:
 // https://github.com/rickkas7/LIS3DH
 //
-#include "Serial5/Serial5.h"
+// #include "Serial5/Serial5.h"
 #include "Particle.h"
 #include "LIS3DH.h"
 #include "TinyGPS++.h"
@@ -18,7 +18,7 @@ TinyGPSPlus gps;
 const char *eventName = "gps";
 
 // Various timing constants
-const uint32_t PUBLISH_INTERVAL_MS = 22 * 60 * 1000;     // Only publish every fifteen minutes
+const uint32_t PUBLISH_INTERVAL_MS = 10 * 60 * 1000;     // Only publish every fifteen minutes
 const uint32_t PUBLISH_INTERVAL_SEC = PUBLISH_INTERVAL_MS / 1000;
 const uint32_t MAX_TIME_TO_PUBLISH_MS = 5 * 1000;       // Only stay awake for 60 seconds trying to connect to the cloud and publish
 const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 3 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
@@ -73,7 +73,7 @@ void flashRgb(uint8_t r, uint8_t g, uint8_t b, uint8_t times, uint32_t delayMs) 
 void setup() {
     Serial.begin(9600);
     Serial1.begin(9600);
-    Serial5.begin(9600);
+    // Serial5.begin(9600);
 
     pinMode(D6, OUTPUT);
     digitalWrite(D6, HIGH);
@@ -102,9 +102,9 @@ void setup() {
 void loop() {
     while (Serial1.available() > 0) {
         char c = Serial1.read();
-        Serial5.print(c);
+        // Serial5.print(c);
         if (gps.encode(c)) {
-            Serial5.println();
+            // Serial5.println();
         }
     }
 
@@ -159,9 +159,9 @@ void loop() {
                  gps.hdop.value(),
                  gps.location.isValid());
 
-        Serial5.print(Time.now());
-        Serial5.print(",");
-        Serial5.println(data);
+        // Serial5.print(Time.now());
+        // Serial5.print(",");
+        // Serial5.println(data);
 
         if (Particle.connected()) {
             flashRgb(0, 255, 0, 1, 500);
