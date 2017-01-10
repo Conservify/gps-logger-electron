@@ -21,7 +21,7 @@ const char *eventName = "gps";
 const uint32_t PUBLISH_INTERVAL_MS = 22 * 60 * 1000;     // Only publish every fifteen minutes
 const uint32_t PUBLISH_INTERVAL_SEC = PUBLISH_INTERVAL_MS / 1000;
 const uint32_t MAX_TIME_TO_PUBLISH_MS = 5 * 1000;       // Only stay awake for 60 seconds trying to connect to the cloud and publish
-const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 20 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
+const uint32_t MAX_TIME_FOR_GPS_FIX_MS = 3 * 60 * 1000;  // Only stay awake for 3 minutes trying to get a GPS fix
 const uint32_t TIME_AFTER_PUBLISH_MS = 4 * 1000;         // After publish, wait 4 seconds for data to go out
 const uint32_t TIME_AFTER_BOOT_MS = 5 * 1000;            // At boot, wait 5 seconds before going to sleep again (after coming online)
 const uint32_t PUBLISH_TTL = 60;
@@ -139,7 +139,7 @@ void loop() {
         }
         if (millis() - stateTime >= MAX_TIME_FOR_GPS_FIX_MS) {
             flashRgb(255, 0, 0, 1, 500);
-            state = PUBLISH_STATE; // SLEEP_STATE
+            state = SLEEP_STATE; // SLEEP_STATE
             break;
         }
         break;
